@@ -12,6 +12,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <thread>
+#include <unordered_map>
 
 // OpenCV
 #include <opencv2/core.hpp>
@@ -185,6 +187,7 @@ void demoDetector<TVocabulary, TDetector, TDescriptor>::run
   // prepare visualization windows
   DUtilsCV::GUI::tWinHandler win = "Current image";
   DUtilsCV::GUI::tWinHandler winplot = "Trajectory";
+  DUtilsCV::GUI::tWinHandler winloop = "Loop detection";
   
   DUtilsCV::Drawing::Plot::Style normal_style(2); // thickness
   DUtilsCV::Drawing::Plot::Style loop_style('r', 2); // color, thickness
@@ -201,6 +204,7 @@ void demoDetector<TVocabulary, TDetector, TDescriptor>::run
   int count = 0;
   
   // go
+  std::unordered_map<int, cv::Mat> imageMap;
   for(unsigned int i = 0; i < filenames.size(); ++i)
   {
     cout << "Adding image " << i << ": " << filenames[i] << "... " << endl;
@@ -229,6 +233,25 @@ void demoDetector<TVocabulary, TDetector, TDescriptor>::run
       cout << "- Loop found with image " << result.match << "!"
         << endl;
       ++count;
+      imageMap[i] = im;
+      if (imageMap.find(result.match) == imageMap.end()) {
+        cv::Mat im2 = cv::imread(filenames[result.match].c_str(), 0);
+        imageMap[result.match] = im2;
+      }
+      cv::Mat imagePair;
+      std::vector<cv::KeyPoint> kp1, kp2;
+      kp1.clear();
+      kp2.clear();
+      std::vector<int> c1, c2;
+      c1.clear(); c2.clear();
+      DUtilsCV::Drawing::drawCorrespondences(
+        imagePair, imageMap[i], imageMap[result.match],
+        kp1, kp2, c1, c2);
+      if (m_show) {
+        // pause until key is pressed
+        cout << endl << "New Loop is found, Press a key to continue..." << endl;
+        DUtilsCV::GUI::showImage(imagePair, true, &winloop, 0);
+      }
     }
     else
     {
