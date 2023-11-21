@@ -67,7 +67,7 @@ void BRIEF::compute(const cv::Mat &image,
     im = image;
   }
   
-  assert(im.type() == cv::COLOR_8UC1);
+  assert(im.type() == CV_8UC1);
   assert(im.isContinuous());
   
   // use im now
